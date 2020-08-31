@@ -20,8 +20,8 @@
 #if USE_BSD_FBDEV
 #include <sys/fcntl.h>
 #include <sys/time.h>
-#include <sys/consio.h>
 #include <sys/fbio.h>
+#include <sys/consio.h>
 #else  /* USE_BSD_FBDEV */
 #include <linux/fb.h>
 #endif /* USE_BSD_FBDEV */
@@ -67,7 +67,7 @@ static struct bsd_fb_fix_info finfo;
 #else
 static struct fb_var_screeninfo vinfo;
 static struct fb_fix_screeninfo finfo;
-#endif /* USE_BSD_FBDEV */
+#endif /* USE_BSD_ */
 static char *fbp = 0;
 static long int screensize = 0;
 static int fbfd = 0;
@@ -183,10 +183,72 @@ void fbdev_flush(lv_disp_drv_t * drv, const lv_area_t * area, lv_color_t * color
     if(vinfo.bits_per_pixel == 32 || vinfo.bits_per_pixel == 24) {
         uint32_t * fbp32 = (uint32_t *)fbp;
         int32_t y;
+        uint8_t r, g, b, a;
+#ifndef APP_DEBUG
+        int32_t x, i=0;
+#endif
         for(y = act_y1; y <= act_y2; y++) {
             location = (act_x1 + vinfo.xoffset) + (y + vinfo.yoffset) * finfo.line_length / 4;
+#ifndef APP_DEBUG
+            for(/*i = 0,*/ x = location; x < (location + ((act_x2 - act_x1 + 1))); x++, i++) {
+                r = (int32_t) (color_p[i].full >>  0) & 0x000000FF;
+                g = (int32_t) (color_p[i].full >>  8) & 0x000000FF;
+                b = (int32_t) (color_p[i].full >> 16) & 0x000000FF;
+                a = (int32_t) (color_p[i].full >> 24) & 0x000000FF;
+
+//                printf(">>>>>> RGB a %.2X r %.2X g  %.2X b  %.2X\n", a,r,g,b);
+//            	fbp32[x] = color_p[i].full & 0x00FFFFFF;
+
+//                // BRGA
+                fbp32[x] = (
+                		(((b & 0x000000FF) <<  0 ) & 0x000000FF) |
+                		(((r & 0x000000FF) <<  8 ) & 0x0000FF00) |
+                		(((g & 0x000000FF) << 16 ) & 0x00FF0000) |
+                		(((a & 0x000000FF) << 24 ) & 0xFF000000)
+						);
+                // GBRA
+//				fbp32[x] = (
+//						(((g & 0x000000FF) <<  0 ) & 0x000000FF) |
+//						(((b & 0x000000FF) <<  8 ) & 0x0000FF00) |
+//						(((r & 0x000000FF) << 16 ) & 0x00FF0000) |
+//						(((a & 0x000000FF) << 24 ) & 0xFF000000)
+//						);
+                // RGBA
+//                fbp32[x] = (
+//                		(((a & 0x000000FF) <<  0 ) & 0x000000FF) |
+//                		(((g & 0x000000FF) <<  8 ) & 0x0000FF00) |
+//                		(((b & 0x000000FF) << 16 ) & 0x00FF0000) |
+//                		(((r & 0x000000FF) << 24 ) & 0xFF000000)
+//						);
+
+                // ARGB
+//                fbp32[x] = (
+//                		(((a & 0x000000FF) <<  0 ) & 0x000000FF) |
+//                		(((r & 0x000000FF) <<  8 ) & 0x0000FF00) |
+//                		(((g & 0x000000FF) << 16 ) & 0x00FF0000) |
+//                		(((b & 0x000000FF) << 24 ) & 0xFF000000)
+//						);
+                // ARBG
+//                fbp32[x] = (
+//                		(((a & 0x000000FF) <<  0 ) & 0x000000FF) |
+//                		(((r & 0x000000FF) <<  8 ) & 0x0000FF00) |
+//                		(((b & 0x000000FF) << 16 ) & 0x00FF0000) |
+//                		(((g & 0x000000FF) << 24 ) & 0xFF000000)
+//						);
+//                // RBGA
+//                fbp32[x] = (
+//                		(((r & 0x000000FF) <<  0 ) & 0x000000FF) |
+//                		(((b & 0x000000FF) <<  8 ) & 0x0000FF00) |
+//                		(((g & 0x000000FF) << 16 ) & 0x00FF0000) |
+//                		(((a & 0x000000FF) << 24 ) & 0xFF000000)
+//						);
+
+
+            }
+#else
             memcpy(&fbp32[location], (uint32_t *)color_p, (act_x2 - act_x1 + 1) * 4);
             color_p += w;
+#endif
         }
     }
     /*16 bit per pixel*/

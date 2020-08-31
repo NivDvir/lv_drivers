@@ -94,8 +94,13 @@ static volatile bool sdl_quit_qry = false;
  */
 void monitor_init(void)
 {
+#if APP_DEBUG
     monitor_sdl_init();
     lv_task_create(monitor_sdl_refr_thread, 10, LV_TASK_PRIO_HIGH, NULL);
+#else
+	fbdev_init();
+#endif
+
 }
 
 /**
@@ -215,7 +220,7 @@ void monitor_flush2(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_color_t
  * SDL main thread. All SDL related task have to be handled here!
  * It initializes SDL, handles drawing and the mouse.
  */
-
+#if APP_DEBUG
 static void monitor_sdl_refr_thread(lv_task_t * t)
 {
     (void)t;
@@ -369,5 +374,5 @@ static void window_update(monitor_t * m)
     SDL_RenderCopy(m->renderer, m->texture, NULL, NULL);
     SDL_RenderPresent(m->renderer);
 }
-
+#endif
 #endif /*USE_MONITOR*/
